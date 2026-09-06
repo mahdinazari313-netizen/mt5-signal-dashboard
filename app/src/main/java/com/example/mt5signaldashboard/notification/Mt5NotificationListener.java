@@ -8,14 +8,27 @@ import com.example.mt5signaldashboard.core.SignalStateManager;
 import com.example.mt5signaldashboard.model.Signal;
 import com.example.mt5signaldashboard.parser.Mt5SignalParser;
 
+/** Receives MT5 notifications and converts only valid signal messages into dashboard state. */
 public class Mt5NotificationListener extends NotificationListenerService {
- @Override public void onNotificationPosted(StatusBarNotification sbn){
-  if(sbn==null||sbn.getNotification()==null)return; Notification n=sbn.getNotification();
-  CharSequence t=n.extras==null?null:n.extras.getCharSequence(Notification.EXTRA_TEXT); if(t==null||TextUtils.isEmpty(t))return;
-  Signal s=Mt5SignalParser.parse(t.toString(),System.currentTimeMillis()); if(s==null)return;
-  // Default validity: 10 candles. Same Symbol+Timeframe replaces the previous signal.
-  long validity=s.timeframe.getBaseMinutes()*60_000L*10L;
-  SignalStateManager.get(this).updateSignal(s,validity);
-  sendBroadcast(new android.content.Intent("com.example.mt5signaldashboard.SIGNAL_UPDATED"));
- }
+    private static final String MT5_PACKAGE = "net.metaquotes.metatrader5";
+    private static final String UPDATED = "com.example.mt5signaldashboard.SIGNAL_UPDATED";
+
+    @Override public void onNotificationPosted(StatusBarNotification sbn) {
+        if (sbn == null || sbn.getNotification() == null) return;
+        if (!MT5_PACKAGE.equals(sbn.getPackageName())) return;
+
+        Notification n = sbn.getNotification();
+        CharSequence text = null;
+        if (n.extras != null) {
+            text = n.extras.getCharSequence(Notification.EXTRA_TEXT);
+            if (TextUtils.isEmpty(text)) text = n.extras.getCharSequence(Notification.EXTRA_BIG_TEXT);
+        }
+        if (TextUtils.isEmpty(text)) return;
+
+        Signal signal = Mt5SignalParser.parse(text.toString(), System.currentTimeMillis());
+        if (signal == null) return;
+
+        SignalStateManager.get(this).updateSignal(signal);
+        sendBroadcast(new android.content.Intent(UPDATED).setPackage(getPackageName()));
+    }
 }
