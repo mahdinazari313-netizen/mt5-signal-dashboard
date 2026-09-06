@@ -38,7 +38,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v1.0.${{ github.run_number }}"
+          TAG="v1.1.${{ github.run_number }}"
           gh release create "$TAG" MT5SignalDashboard.apk \
             --title "MT5 Signal Dashboard $TAG" \
             --notes "Direct-install Android APK. Universal debug build, verified as a valid APK archive." \
