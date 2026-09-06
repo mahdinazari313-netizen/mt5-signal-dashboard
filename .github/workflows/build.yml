@@ -20,8 +20,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-      - name: Build debug APK
-        run: gradle :app:assembleDebug
+      - name: Build universal installable APK
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Verify APK
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          file app/build/outputs/apk/debug/app-debug.apk
+          unzip -t app/build/outputs/apk/debug/app-debug.apk >/dev/null
       - name: Prepare APK
         run: cp app/build/outputs/apk/debug/app-debug.apk MT5SignalDashboard.apk
       - name: Upload artifact
@@ -34,4 +39,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v1.0.${{ github.run_number }}"
-          gh release create "$TAG" MT5SignalDashboard.apk --title "MT5 Signal Dashboard $TAG" --notes "Installable Android APK built from main." --target "${{ github.sha }}"
+          gh release create "$TAG" MT5SignalDashboard.apk \
+            --title "MT5 Signal Dashboard $TAG" \
+            --notes "Direct-install Android APK. Universal debug build, verified as a valid APK archive." \
+            --target "${{ github.sha }}" \
+            --latest
